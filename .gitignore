@@ -1,0 +1,5 @@
+# Ignore temporary folder for latex compilation
+*.spl
+*.log
+*.bbl
+*.blg
