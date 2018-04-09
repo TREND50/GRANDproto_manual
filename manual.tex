@@ -1,0 +1,43 @@
+
+
+\documentclass[article,12pt]{elsarticle}
+\usepackage{soul}
+\usepackage{amssymb} 
+\usepackage{amsmath} 
+\usepackage[nolist]{acronym} 
+\usepackage[displaymath, mathlines]{lineno} 
+%\usepackage{refcheck} 
+%\journal{Astroparticle Physics} 
+%\acrodef{TREND}{TianShan Radio Experiment for Neutrino Detection} 
+%\linenumbers 
+
+\begin{document} 
+\begin{frontmatter} 
+\title{Manual for GRANDproto35 operation} 
+\author[lpnhe]{Jacques David} 
+\author[naoc]{Junhua~Gu}
+\author[lpnhe]{Olivier~Martineau-Huynh} 
+\ead{martineau@lpnhe.in2p3.fr} 
+\author[lpnhe]{David Martin} 
+\author[lpnhe]{Patrick Nayman}
+\author[lpnhe]{Vincent Voisin}
+
+\address[lpnhe]{LPNHE, Universit\'e Pierre et Marie Curie, Universit\'e Paris Diderot, CNRS/IN2P3, Paris, France.} 
+\address[naoc]{National Astronomical Observatories of China, Chinese Academy of Science, Beijing 100012, P.R. China.} 
+\end{frontmatter} 
+
+\input{intro}
+\input{board}
+\input{DAQ}
+\input{Operation}
+\input{troubleshooting}
+
+
+%\nocite{*} 
+\section{References}
+\bibliographystyle{elsarticle-num} 
+\bibliography{biblio} 
+
+\end{document} 
+
+\endinput

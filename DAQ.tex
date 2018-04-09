@@ -1,0 +1,68 @@
+\section{Data acquisition \& communication with board} 
+\label{DAQ}
+
+\subsection{General structure}
+The DAQ has a multi-layer structure. At the core of it is a very basic system of formated words exchanges between the front-end units and the PC. These are briefly described in section \ref{config}, and in more details in \cite{GP35daq}. \\
+%
+One of the central element of the DAQ system is a C program, called \texttt{TREND\_server}, which  runs on the DAQ PC and collects data sent by the Front-End units on a given port of the PC (by defaut 1235 for slow-control data, and 1236 for antenna data). This is the "ear" of the DAQ. It is complemented by its "mouth", a program called \texttt{send\_message} which issues commands to the Front-End units on another port (by default 1234).  Note here that \texttt{TREND\_server} and \texttt{send\_message} do not communicate with each other. This is a direct consequence from the fact that the DAQ is based on socket communication in UDP protocol. It is therefore a built-in feature of the DAQ system. \\
+%
+However a third layer of code, which consists of shell scripts, is in charge of properly starting relevent processes, and sending appropriate commands in a timely manier so that all runs smoothly. This third layeris also supposed to send notifications to the user in case things go wrong. The user in principle only accesses this layer.  \\
+
+{\bf TO BE COMPLETED/CORRECTED ONCE WE HAVE CONVERGED TO A STABLE DAQ SYSTEM.}
+
+\subsection{Acquisition modes}
+The different types of acquisition are the following:
+
+\subsubsection{Pattern mode}
+\label{pattern}
+Here we request that the ADC generates a specific 12-bits pattern which can be:
+\begin{enumerate}[i)]
+\item{{\bf zeros}, aseries of 8 null bits.}
+\item{{\bf ones}, corresponding to a numeric value equal to 4096.}
+\item{{\bf toggle}, corresponding to an alternance between sequences '010101010101' and  '101010101010', equal to numeric values of 1365 and 2730 respectively.}
+\item{{\bf deskew}, corresponding to a sequence '110011001100', equal to a numeric value of 819.}
+\item{{\bf sync}, corresponding to a sequence '111111000000', equal to a numeric value of 4032.}
+\end{enumerate} 
+Soft trigger is used to record data. This mode allows to check that the digital section of the unit works properly.
+
+\subsubsection{Calibration mode}
+Here the signal processed by the Front-End unit is the sine wave from the calibrator (see section \ref{analog}). Soft trigger is used to record data. This mode allows to test that the analog part of the board works properly, and moreover to calibrate the response of the DAQ chain, as the amplitude of the input signal is known here.
+
+\subsubsection{Physics mode}
+This is the standard acquisition mode for cosmic-ray detection. Here the input of the Front-End unit is the antenna signals, and the acquisition is triggered by them, with ajustable threshold values (see section \ref{TRENDTRIG}).
+
+\subsubsection{Minimal bias mode}
+This mode differs from the previous only by the fact that acquisition is triggered by a soft trigger. This allows to record a baseline signal at a given instant, and is used for monitoring purposes. 
+
+\subsubsection{Slow control}
+This mode allows to record the slow control information of the Front-End (namely: voltage of the 3 LNAs, voltage at the unit input, absolute value of the +3V and -4V DC levels, temeprature, trigger rates of the six channels). 
+
+\subsection{Configuration files}
+\label{config}
+The parameters defining an acquistion are written in configuration files (.cfg extension). These files are readable -and in principle modifiable- through a standard text editor. They are also read and passed to the DAQ by the \texttt{send\_message} program.
+We detail below these parameters and configuration files for the various type of runs. 
+%
+\subsubsection{TRENDADC message}
+Each parameter of a {\it TRENDADC} message corresponds to the configuration of the ADC (see details in \cite{ADCdoc}). Only the word with adress 0xa (corresponding to the register 2 of the ADC) differs for the pattern mode, where its value depends on the type of pattern chosen (see section \ref{pattern}), while it is 0 otherwise. 
+%
+\subsubsection{TRENDDAQ message}
+\label{TRENDDAQ}
+The main  parameters of the DAQ are defined in the {\it TRENDDAQ} word. They are:
+\begin{enumerate}[-]
+\item{{\bf DAQon}, a boolean which switches acquisition on or off.} 
+\item{{\bf AntOn}, a 3-bit-pattern switching on or off the output of channels X,Y and Z. It is set to 0 in calibration or pattern mode, and 7 (all channels on) in standard operation for the other modes.}
+\item{{\bf EnOSC}, a boolean switching on or off the calibration oscillator. It is 1 in calibration mode, 0 otherwise. }
+\item{{\bf Offst}, a scalar corresponding to half the trace length, in sample units. Default value is 90, corresponding to a 3.6\,$\mu$s trace for a 50\,MHz sampling rate.}
+\item{{\bf EnablePD}, a 3-bit-pattern switching on or off the power detectors of channels X,Y and Z. Its default value is 7.}	
+\item{{\bf DisLNA}, a 3-bit-pattern switching off or on the LNAs of channels X,Y and Z.  The default value for this parameter is 7 (all LNAs off). It is also set to this value in calibration or pattern mode, and 0 in standard operation for the other modes. }
+\item{{\bf Attr1} and {\bf Attr2} are the values for the 2 attenuators of the calibrator. Their value range between 0 (full attenuation) and 127 (no attenuation). These values do not matter for modes others than calibration.} 
+\end{enumerate}
+
+\subsubsection{TRENDTRIG message}
+\label{TRENDTRIG}
+In the {\it TRENDTRIG} message, we find the parameters relative to the trigger. Most important for the user are:
+\begin{enumerate}[-]
+\item{{\bf ST}, a boolean sending a soft trigger order to the Front-End unit.}
+\item{{\bf TrgEn},  a 3-bit-pattern enabling the different channels. The order of the channels in the pattern is Z-, Y-, X-, Z+, Y+, X+, where the sign stands for the polarity of the trigger signal.}
+\item{{\bf ThXs} (where X=1,2,3 is the channel, and s=+,- the polarity) is the threshold (in mV) of the 6 trigger channels. Obviously these values are relevant only if the corresponding bits in the TrgEn pattern are set to 1.}
+\end{enumerate}
