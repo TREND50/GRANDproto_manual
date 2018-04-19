@@ -3,18 +3,48 @@
 Here we describe how to start and run the GRANDproto35 setup.
 
 \subsection{Start up}
+\label{startup}
 \begin{enumerate}[-]
-\item{Once the Front-End Unit has been connected to the appropriate cables (see section \ref{connection}) and powered on, the script \texttt{setIP.sh} should be launched on the DAQ PC. It will attribute a dedicated IP adress 192.168.1.1.xx to each board of ID number xx. Successat this stage can be checked through a ping command to the unit IP adress. Note that the \texttt{setIP.sh} script also informs the units about the DAQ PC ID (IP adress and MAC adress). If these 2 parameters do not correspond to the actual values of the PC, then DAQ communication will not be possible. (see troubleshootig section)}
+\item{ First set-up, connect and power the Front-End Unit as described in section \ref{feu}.} 
+%\item{Then make sure that the environment variable \texttt{\$DATADIR} is properly defined through the command \texttt{echo \$DATADIR}. This variable defines where the data should be stored. It should be defined in one of the config file ( \texttt{.profile} for instance).}
 %
-\item{Then the status of the unit can be requested, through the command \texttt{SLCreq.sh}. A slow-control event file should appear in the \texttt{\$DATADIR} folder. Edit it and check that all voltage values are correct (Voltage1=14V, Voltage2=3V, Voltage3=4V, Voltage4 to 6= 12V) and that temeprature is also reasonable (between 10 and 50$^{\circ}$C).  If all is OK at this stage, this means that DAQ communication with teh board works fine and that the Unit is properly powered.}
+\item{Issue the following command should be launched on the DAQ PC: \\
+\ \\
+\texttt{setAdress.sh BOARDID} \\
+\ \\
+\hl{Note here that BOARDID is 2 digits for ALL units (ie 01 for n$^{\circ}$1)}. \\
+This command will call the subprocess \texttt{configureGedek} located in subfolder \texttt{setAdress/}. This program, written in C, will attribute a dedicated IP adress 192.168.1.1xx to each board of ID number xx. Communication of \texttt{configureGedek} with the board is done through its MAC adresss stored in the dedicated file \texttt{configGedek.txt}. \\
+Success in establishing the proper IP adress to a unit can be checked through a ping command to the unit IP adress. Note that the \texttt{setAdress.sh} script also informs the units about the DAQ PC ID (IP adress and MAC adress). If these 2 parameters do not correspond to the actual values of the PC, then DAQ communication will not be possible (see troubleshooting section).}
 %
-\item{Then launch \texttt{pattern.sh} with parameters "\texttt{\$BOARDID} 3" where \texttt{\$BOARDID} is the board number ID. This executes a {\it pattern} run in toggle mode (see section \ref{pattern}) and allows to check that the logical section of the board is running properly.}
+\item{Then the status of the unit can be requested, through the following command: \\
+\ \\
+\texttt{slcreq.sh  BOARDID }\\
+\ \\
+A slow-control event file should appear in the \texttt{\$DATADIR} folder. Edit it and check that all voltage values are correct (Voltage1=14V, Voltage2=3V, Voltage3=4V, Voltage4 to 6= 12V) and that temeprature is also reasonable (between 10 and 50$^{\circ}$C).  If all is OK at this stage, this means that DAQ communication with teh board works fine and that the Unit is properly powered.}
 %
-\item{Then launch \texttt{calib.sh} with parameters "\texttt{\$BOARDID} 60 60". This execute a calibration run with a total attenuation of {\bf xx} dB. Open the run file with python script with \texttt{anaData.py} and check that the average value of the signal is around a value of {\bf xx} Volts, with a standard deviation not above {\bf xx} Volts. This allows to check that analog section of the board is running properly. }
+\item{Then launch:\\
+\ \\
+\texttt{pattern.sh BOARDID 3} \\
+\ \\
+This executes a {\it pattern} run in toggle mode (see section \ref{pattern}) and allows to check that the logical section of the board is running properly.}
 %
-\item{Then launch \texttt{minBias.sh} with parameter "\texttt{\$BOARDID}". Open the run file with python script with \texttt{anaData.py} and check that the average value of the signal is around a value of {\bf xx} Volts, with a standard deviation not above {\bf xx} Volts. This allows to check the status of the antenna and of its electromagnetic environment.Check also in the event header that the GPS info is present.}
+\item{Then launch: \\
+\ \\
+\texttt{loopCalib.sh BOARDID 60 60} \\
+\ \\
+This execute a calibration run with a total attenuation of {\bf xx} dB. Open the run file with python script with \texttt{anaData.py} and check that the average value of the signal is around a value of {\bf xx} Volts, with a standard deviation not above {\bf xx} Volts. This allows to check that analog section of the board is running properly. }
 %
-\item{Finaly launch \texttt{phys.sh} with parameter "\texttt{\$BOARDID} 60 60 60 60 1000 10000". This will start a physics run, with triggers on the X and Y channels. Monitor the trigger rate by launching \texttt{loopSLC.sh}, which will request slow control data every 10 seconds. Display the trigger rate with the \texttt{anaSLC.py} script.}
+\item{Then launch: \\
+\ \\
+\texttt{minBias.sh BOARDID} \\
+\ \\
+Open the run file with python script with \texttt{anaData.py} and check that the average value of the signal is around a value of {\bf xx} Volts, with a standard deviation not above {\bf xx} Volts. This allows to check the status of the antenna and of its electromagnetic environment.Check also in the event header that the GPS info is present.}
+%
+\item{Finaly launch: \\
+\ \\
+\texttt{phys.sh BOARDID 60 60 60 60 1000 10000} \\
+\ \\
+This will start a physics run, with triggers on the X and Y channels. Monitor the trigger rate by launching \texttt{loopSLC.sh}, which will request slow control data every 10 seconds. Display the trigger rate with the \texttt{anaSLC.py} script.}
 \end{enumerate} 
 
 \subsection{Normal operation}

@@ -6,10 +6,38 @@
 \usepackage{amsmath} 
 \usepackage[nolist]{acronym} 
 \usepackage[displaymath, mathlines]{lineno} 
+\usepackage{titlesec}
+\usepackage{etoolbox}  % Patch to titlsec issue with numbering
+\makeatletter
+\patchcmd{\ttlh@hang}{\parindent\z@}{\parindent\z@\leavevmode}{}{}
+\patchcmd{\ttlh@hang}{\noindent}{}{}{}
+\makeatother
+\titleformat{\section}{\normalfont\scshape}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\bfseries}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalfont}{\thesubsubsection}{1em}{}
+
+\usepackage[tmargin=1in,bmargin=1in,lmargin=1.25in,rmargin=1.25in]{geometry}
+%\usepackage{fontspec}
+\usepackage{xcolor}
+\setcounter{secnumdepth}{4}
 %\usepackage{refcheck} 
 %\journal{Astroparticle Physics} 
 %\acrodef{TREND}{TianShan Radio Experiment for Neutrino Detection} 
 %\linenumbers 
+%\definecolor{MSBlue}{rgb}{.204,.353,.541}
+%\definecolor{MSLightBlue}{rgb}{.31,.506,.741}
+%\titleformat*{\section}{\Large\bfseries\color{MSBlue}}
+%\titleformat*{\subsection}{\large\bfseries\color{MSLightBlue}}
+%\titleformat*{\subsubsection}{\itshape}
+% Define light and dark Microsoft blue colours
+% Define a new fontfamily for the subsubsection font
+% Don't use \fontspec directly to change the font
+%\newfontfamily\subsubsectionfont[Color=MSLightBlue]{Times New Roman}
+%\defaultfontfeatures{Ligatures=TeX}
+% Set sans serif font to Calibri
+%\setsansfont{Calibri}
+% Set serifed font to Cambria
+%\setmainfont{Cambria}
 
 \begin{document} 
 \begin{frontmatter} 
