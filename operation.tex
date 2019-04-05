@@ -1,54 +1,61 @@
 \section{Operation} 
-
-Here we describe how to start and run the GRANDproto35 setup.
+\label{operation}
+Here we describe how to start and run the GRANDproto35 setup. This is a very preliminary structure, as the scripts are very likely to evolve. THis is therefore not too much detailed.
 
 \subsection{Start up}
 \label{startup}
-\begin{enumerate}[-]
-\item{ First set-up, connect and power the Front-End Unit as described in section \ref{feu}.} 
+\begin{enumerate}[1-]
+\item{ First set-up, connect and power the detection unit as described in section \ref{feu}. \\} 
 %\item{Then make sure that the environment variable \texttt{\$DATADIR} is properly defined through the command \texttt{echo \$DATADIR}. This variable defines where the data should be stored. It should be defined in one of the config file ( \texttt{.profile} for instance).}
 %
-\item{Issue the following command should be launched on the DAQ PC: \\
-\ \\
-\texttt{setAdress.sh BOARDID} \\
-\ \\
-\hl{Note here that BOARDID is 2 digits for ALL units (ie 01 for n$^{\circ}$1)}. \\
-This command will call the subprocess \texttt{configureGedek} located in subfolder \texttt{setAdress/}. This program, written in C, will attribute a dedicated IP adress 192.168.1.1xx to each board of ID number xx. Communication of \texttt{configureGedek} with the board is done through its MAC adresss stored in the dedicated file \texttt{configGedek.txt}. \\
-Success in establishing the proper IP adress to a unit can be checked through a ping command to the unit IP adress. Note that the \texttt{setAdress.sh} script also informs the units about the DAQ PC ID (IP adress and MAC adress). If these 2 parameters do not correspond to the actual values of the PC, then DAQ communication will not be possible (see troubleshooting section).}
+\item{Then issue the command \texttt{./set\_addr.sh} on the DAQ PC from the \texttt{gp\_daq/scripts} directory. This command will call the subprocess \texttt{set\_addr} located in directory \texttt{gp\_daq/target/release}. This program will attribute a dedicated IP adress 192.168.1.1xx to each board of ID number xx. \texttt{set\_addr} communicates with the board through its MAC adress, stored in the dedicated file \texttt{gp\_daq/scripts/addr.yaml}. See \cite{daq_git} for details. \\
+Success in establishing proper communication to an Electronic Board can be checked through a ping command to the unit IP adress. Note that the \texttt{set\_addr} command also informs the units about the DAQ PC ID (IP adress and MAC adress), as well as the communications ports to be used for data and slow control data transfer. \\ }
+%%If these 2 parameters do not correspond to the actual values of the PC, then DAQ communication will not be possible (see troubleshooting section).}
 %
-\item{Then the status of the unit can be requested, through the following command: \\
+\item{Then the status of the unit can be requested through the following command: \\
 \ \\
-\texttt{slcreq.sh  BOARDID }\\
+\texttt{./slcreq.sh  BOARDID }\\
 \ \\
-A slow-control event file should appear in the \texttt{\$DATADIR} folder. Edit it and check that all voltage values are correct (Voltage1=14V, Voltage2=3V, Voltage3=4V, Voltage4 to 6= 12V) and that temeprature is also reasonable (between 10 and 50$^{\circ}$C).  If all is OK at this stage, this means that DAQ communication with teh board works fine and that the Unit is properly powered.}
+from the same directory \texttt{gp\_daq/scripts}. A slow-control event file should appear in the \texttt{\$DATADIR} directory (in principal equal to \texttt{/mnt/disk}). Edit it and check that all voltage values are correct: vpower1 should be in range 9 to 24\,V, vpower2 $\simeq$ 3\,V, vpower3 $\simeq$ 4\,V, vpower4, 5 and 6 = \texttt{min}( vpower1,12V). The temperature should also be in the range between 0 and 50\degree.  \\
+If all is OK at this stage, this means that DAQ communication with the board works fine and that the detection unit is properly powered. \\}
 %
 \item{Then launch:\\
 \ \\
-\texttt{pattern.sh BOARDID 3} \\
+\texttt{./pattern.sh BOARDID 3} \\
 \ \\
-This executes a {\it pattern} run in toggle mode (see section \ref{pattern}) and allows to check that the logical section of the board is running properly.}
+Note again that $BOARDID$ is a two-digit integer (\texttt{"03"} for board n\degree3). This executes a {\it pattern} run in toggle mode (see section \ref{pattern}) and tests if the logical section of the board is running properly. Check that a file with name \texttt{P$RUNID$\_b$BOARDID$.data.yaml} is indeed created in the $DATADIR$ directory. Edit it and check that data values in the file are all equal to 819, corresponding to the {\bf deskew} sequence (see section \ref{pattern} for details).   \\
+If all is OK at this stage, this means that ADC and FPGA are working properly. \\}
+%
+\item{Then a complementary stage consists in launching: \\
+\ \\
+\texttt{./loopCalib.sh BOARDID 60 60} \\
+\ \\
+This execute a calibration run with $Att1=Att2$=60, corresponding to a total attenuation of 33.5\,dB to the quartz sine signal (see Eq. \ref{attCalib}). Open the run file with python script with \texttt{anaData.py} and check that the average value of the signal is around a value of -0.4\,V, with a standard deviation not above 80\,mV. This allows to check that analog section of the board is also running properly. \\
+\bf{The tools for this stage (scripts+analysis) have to be implemented again with the new data format.} \\}
 %
 \item{Then launch: \\
 \ \\
-\texttt{loopCalib.sh BOARDID 60 60} \\
+\texttt{./soft.sh BOARDID} \\
 \ \\
-This execute a calibration run with a total attenuation of {\bf xx} dB. Open the run file with python script with \texttt{anaData.py} and check that the average value of the signal is around a value of {\bf xx} Volts, with a standard deviation not above {\bf xx} Volts. This allows to check that analog section of the board is running properly. }
+This script launches an infinite loop recording data in the {\it minBias} mode (see section \ref{minbias}). \\
+In the offline treatment, open the run file \texttt{M$RUNID$.data.bin} with the python script \texttt{readData.py} and display the signals. Check that the average value of the signal is $\sim$0.2\,V, with a standard deviation of the baseline $\sim$0.2\,V as well, for all three channels. \\
+This allows to test if the antenna + analog part of the EB are also working fine. This furthermore gives an insight on the electromagnetic environment of the antenna. If this stage fails, the previous one (calibration) should allow to determine if the problem comes from the EB or the antenna. \\
+You may also open the \texttt{R$RUNID$.data.bin.yaml} file to check in the event header that the GPS info is different from 0. \\}
+\end{enumerate}
 %
-\item{Then launch: \\
-\ \\
-\texttt{minBias.sh BOARDID} \\
-\ \\
-Open the run file with python script with \texttt{anaData.py} and check that the average value of the signal is around a value of {\bf xx} Volts, with a standard deviation not above {\bf xx} Volts. This allows to check the status of the antenna and of its electromagnetic environment.Check also in the event header that the GPS info is present.}
-%
-\item{Finaly launch: \\
-\ \\
-\texttt{phys.sh BOARDID 60 60 60 60 1000 10000} \\
-\ \\
-This will start a physics run, with triggers on the X and Y channels. Monitor the trigger rate by launching \texttt{loopSLC.sh}, which will request slow control data every 10 seconds. Display the trigger rate with the \texttt{anaSLC.py} script.}
-\end{enumerate} 
+The detection unit can be considered as fully functionnal if all previous steps were successful. It may then be included in the Physics acquisition by adding the $BOARDID$ value to the file \texttt{boardsIn.txt} in the \texttt{gp\_daq/scripts} directory. 
 
 \subsection{Normal operation}
+Launch \texttt{./loopPhys.sh}. \\
+This will start a {\it Physics} run on all units listed in \texttt{boardsIn.txt}, with triggers on X and Y channels only. {\bf ToDo: find a proper way to set individual triggers on channels \& units independently (with a default value common to all)}. This script also requests slow control data every two minutes. Together with other slow control monitoring infos (see section \ref{slcdaq} for details), the $MAXCOARSE$ value is therefore saved to disk, and made available for a precise computation of the trigger time  in the offline analysis (see section \ref{timing} for details). \\
+%
+Note that EBs will remain configured in this mode even though the DAQ process and data writting to disk are interrupted. \hl{To stop data emission from the boards, you will have to explicitly request it.} This can be done by calling the \texttt{./loopStop.sh} script. \\
+%
+In the offline treatment, coincidences can be searched for with the \texttt{readData.py} script. The produced \texttt{R$RUNID$\_coinctable.txt} file can then be analysed with a C software computing the best wave direction (plane wave hypothesis) and source position (spherical wave hypothesis) associated with each coincidence \cite{recons_git}. These reconstructions can eventually be analysed with the \texttt{readRecons.py}\,\cite{ana_git} script.
+
 
 \subsection{Monitoring data}
+{\bf To be completed: MinBias and Galactic fluctuation measurements, as well as trigger rate monitoring.}
 
 \subsection{Calibration}
+{\bf To be completed: based on Calib procedure (see section \ref{calib}).}

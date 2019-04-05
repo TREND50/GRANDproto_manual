@@ -2,48 +2,70 @@
 \label{DAQ}
 
 \subsection{General structure}
-The DAQ has a multi-layer structure. At the core of it is a very basic system of formated words exchanges between the front-end units and the PC. These are briefly described in section \ref{config}, and in more details in \cite{GP35daq}. \\
-%
-One of the central element of the DAQ system is a C program, called \texttt{TREND\_server}, which  runs on the DAQ PC and collects data sent by the Front-End units on a given port of the PC (by defaut 1235 for slow-control data, and 1236 for antenna data). This is the "ear" of the DAQ. It is complemented by its "mouth", a program called \texttt{send\_message} which issues commands to the Front-End units on another port (by default 1234).  Note here that \texttt{TREND\_server} and \texttt{send\_message} do not communicate with each other. This is a built-in feature of the DAQ system, which directly derives from the fact that the DAQ is based on socket communication in UDP protocol. It also means that there is no straightforward way to guarantee that a command issued by \texttt{send\_message} is indeed received and executed by the Front-End Unit. \\
-%
-However a third layer of code, which consists of shell scripts, is in charge of properly starting relevent processes, and sending appropriate commands in a timely manier so that all runs smoothly. This third layer is also supposed to send notifications to the user in case things go wrong. The user in principle only accesses this layer.   \\
+\label{DAQstruct}
+The GRANDProto35 DAQ software structure is detailed in the README file and doc section of its dedicated gitHub repository\,\cite{daq_git}. Here we simply give a brief overview. 
 
-{\bf TO BE COMPLETED/CORRECTED ONCE WE HAVE CONVERGED TO A STABLE DAQ SYSTEM.}
+The DAQ software has a multi-layer structure. At the core of it is a very basic system of formated words exchanged between the EB and the DAQ PC. These are briefly described in section \ref{config}, and in more details in \cite{GP35daq}. The central engine of the DAQ system is composed of two programs originally written in C, now translated in RUST, and running on the DAQ PC:
+\begin{itemize}
+\item{\texttt{trend\_server} runs on the DAQ PC and collects data sent by the Electronic Boards (EB) on a given port of the PC (by defaut 1235 for slow-control data, and 1236 for antenna data). This is the "ear" of the DAQ.}
+\item{\texttt{send\_msg} is its "mouth". It issues commands to the EBs on another port (by default 1234).}
+\end{itemize}
+By construction \texttt{trend\_server} and \texttt{send\_msg} do not communicate with each other. This is a built-in feature of the DAQ system, which directly derives from the fact that the DAQ is based on socket communication in UDP protocol. However in the RUST version of the program, an inner process makes sure that the acknowledge statement expected from the EB in response to a message from the DAQ PC is indeed received, and warns the user otherwise (\texttt{"NoAck"} message displayed on screen).  \\
+%
+A third layer of code, which consists of shell scripts, is in charge of properly starting relevent processes, and sending appropriate commands in a timely manier so that all runs smoothly. The standard user only accesses this layer in principle. {\bf It is presently in a very preliminary form and should be improved}. These scripts are saved in the \texttt{gp\_daq/scripts} directory, and some of them are detailed in section \ref{operation}.
+
+\subsection{Data format}
+\label{format}
+Data are in principle in binary format, following a structure very much inspired by the AERA data\,\cite{DAQFormat_pres}. It can be accessed in a python session thanks to tools provided by a dedicated package called \texttt{pyef}\,\cite{pyef_git}. Examples of data retrieval with \texttt{pyef} are given in the script \texttt{readData.py}\,\cite{ana_git} for example. \\
+%
+Pattern (see section \ref{pattern}) and slow control data is however saved in YAML format. This in particular allows the user to open it with a text editor and quickly check the normal beahavior of DAQ and units. Examples of YAML file handling in Python are given for example in the script \texttt{anaSLC.py}\,\cite{ana_git}. \\
+%
+Note finaly that the standard data may be saved under YAML format as well, for debugging purpose. {\bf Explain how this can be done}. The script \texttt{readDataYaml.py}\,\cite{ana_git} then allows to read these YAML data with python.
+%
+Data directory is specified as an argument to the \texttt{trend\_server} program. It is in principle $/mnt/disk$ and is associated with the $DATADIR$ variable in the DAQ machine.
 
 \subsection{Acquisition modes}
-The different types of acquisition are the following:
+The different types of data acquisition are the following:
 
 \subsubsection{Pattern mode}
 \label{pattern}
 Here we request that the ADC generates a specific 12-bits pattern which can be:
-\begin{enumerate}[i)]
+\begin{enumerate}[1)]
 \item{{\bf zeros}, a series of 8 null bits.}
 \item{{\bf ones}, a series of 8 "1" bits, corresponding to a numeric value of 4095.}
 \item{{\bf toggle}, corresponding to an alternance between sequences '010101010101' and  '101010101010', equal to numeric values of 1365 and 2730 respectively.}
 \item{{\bf deskew}, corresponding to a sequence '110011001100', equal to a numeric value of 819.}
 \item{{\bf sync}, corresponding to a sequence '111111000000', equal to a numeric value of 4032.}
 \end{enumerate} 
-A soft trigger is issued, resulting in the Front-End Unit sending one event only. This mode allows to check that the digital section of the unit works properly.
+A soft trigger is issued, resulting in the EB sending one event only. This mode allows to check that the digital section of the unit works properly. Pattern data is saved in YAML format, allowing to do this check by eye, simply opening the file with a text editor.
 
 \subsubsection{Calibration mode}
-Here the signal processed by the Front-End unit is the sine wave from the calibrator (see section \ref{analog}). Again a soft trigger is issued, but usually repeated several times in a single acquisition, resulting in a run composed of several event (typically 1000). This mode allows to test that the analog part of the board works properly, and moreover to calibrate the response of the DAQ chain, as the amplitude of the input signal is known here.
+\label{calib}
+Here the signal processed by the EB is the sine wave from the calibrator (see section \ref{analog}), with a programable attenuation given by two coefficients Att1 and Att2, according to the following formula: 
+\begin{equation}
+\label{attCalib}
+Att(dB)=(254-(Att1+Att2))\times0.25
+\end{equation}
+Again a soft trigger is issued, but usually repeated several times in a single acquisition, resulting in a run composed of several events (typically 100). This mode allows to test that the analog part of the board works properly, and moreover to calibrate the response of the DAQ chain, as the amplitude of the input signal is known here.
 
 \subsubsection{Physics mode}
-This is the standard acquisition mode for cosmic-ray detection. Here the input of the Front-End unit is the antenna signals, and the acquisition is triggered by them, with ajustable threshold values (see section \ref{TRENDTRIG}). The run will go on (and data will flow) as long as no other command is issued. 
+This is the standard acquisition mode for cosmic-ray detection. Here the input of the EB is the antenna signals, and the acquisition is triggered by them, with ajustable threshold values (see section \ref{TRENDTRIG}). The run will go on (and data will flow) as long as no other command is issued. 
 
 \subsubsection{Minimal bias mode}
-This mode differs from the previous only by the fact that acquisition is triggered by a soft trigger, again looped for 1000 times to collect a large enough statistics. This allows to record a baseline signal at a given instant, and is used for monitoring purposes. 
+\label{minbias}
+In this mode, acquisition of the signals at antenna output is triggered by a soft trigger. This allows to record a baseline signal at a given instant, and is used for monitoring purposes. The command may be looped (200 times typically) in order to collect larger statistics. 
 
-\subsubsection{Slow control}
-This mode allows to record the slow control information of the Front-End (namely: voltage of the 3 LNAs, voltage at the unit input, absolute value of the +3V and -4V DC levels, temeprature, trigger rates of the six channels). 
+\subsubsection{Slow control acquisition}
+\label{slcdaq}
+This mode allows to record the slow control information of the EB. It can be run in parallel to the others, as slow control is associated with a specific port (see section \ref{DAQstruct}). In addition to the monitoring informations measured on the board for monitoring (voltage of the 3 LNAs, voltage at the unit input, absolute value of the +3V and -4V DC levels, temperature, see section \ref{slc} for details), the overall trigger rate of the unit, as well as the individual trigger rates of the six channels averaged over the last second are also sent in a SLC message, together with the channels thresholds values and the $MAXCOARSE$ value (see section \ref{timing}). 
 
-\subsection{Configuration files}
+\subsection{DAQ messages}
 \label{config}
-The parameters defining an acquistion are written in configuration files (.cfg extension). These files are readable through a standard text editor. They are also read and passed to the DAQ by the \texttt{send\_message} program.
-We detail below these parameters and configuration files for the various type of runs. 
+The DAQ is monitored through DAQ messages written in configuration files in YAML format, (thus readable through a standard text editor) and stored in the \texttt{gp\_daq/cfgs} directory. When executed, the \texttt{send\_msg} program reads the configuration file given as a parameter and sends the messages composing it to the EB.
+We detail below these messages and their different values for the various types of runs. 
 %
 \subsubsection{TRENDADC message}
-Each parameter of a {\it TRENDADC} message corresponds to the configuration of the ADC (see details in \cite{ADCdoc}). Only the word with adress 0xa (corresponding to the register 2 of the ADC) differs for the pattern mode, where its value depends on the type of pattern chosen (see section \ref{pattern}), while it is 0 otherwise. 
+Each parameter of a {\it TRENDADC} message participates in the configuration of the ADC (see details in \cite{ADCdoc}). The message is the same for all acquisition modes except for pattern, where the word with adress 0xa (corresponding to the register 2 of the ADC) differs, with a value depending on the type of pattern chosen (see section \ref{pattern}), while it is 0 for the other modes. 
 %
 \subsubsection{TRENDDAQ message}
 \label{TRENDDAQ}
@@ -57,12 +79,13 @@ The main  parameters of the DAQ are defined in the {\it TRENDDAQ} word. They are
 \item{{\bf DisLNA}, a 3-bit-pattern switching off or on the LNAs of channels X,Y and Z.  The default value for this parameter is 7 (all LNAs off). It is also set to this value in calibration or pattern mode, and 0 in standard operation for the other modes. }
 \item{{\bf Attr1} and {\bf Attr2} are the values for the 2 attenuators of the calibrator. Their value range between 0 (full attenuation) and 127 (no attenuation). These values do not matter for modes others than calibration.} 
 \end{enumerate}
+Also note that the $SSS$ info is reset each time a $TRENDDAQ$ command is issued.
 
 \subsubsection{TRENDTRIG message}
 \label{TRENDTRIG}
 In the {\it TRENDTRIG} message, we define the parameters relative to the trigger. Most important for the user are:
 \begin{enumerate}[-]
-\item{{\bf ST}, a boolean sending a soft trigger order to the Front-End unit.}
+\item{{\bf ST}, a boolean sending a soft trigger order to the EB.}
 \item{{\bf TrgEn},  a 3-bit-pattern enabling the different channels. The order of the channels in the pattern is Z-, Y-, X-, Z+, Y+, X+, where the sign stands for the polarity of the trigger signal.}
-\item{{\bf ThXs} (where X=1,2,3 is the channel, and s=+,- the polarity) is the threshold (in mV) of the 6 trigger channels. Obviously these values are relevant only if the corresponding bits in the TrgEn pattern are set to 1.}
+\item{{\bf ThXs} (where X=1,2,3 is the channel, and s=+,- the polarity) is the threshold (in mV) of the 6 trigger channels at the comparator level (should be divided by a factor 40 to have an estimate at the antenna output level, and an additionnal factor 27 (24\,dB) to detecrmine the corresponding voltage level at antenna input. Obviously these values are relevant only if the corresponding bits in the TrgEn pattern are set to 1.}
 \end{enumerate}

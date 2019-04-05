@@ -1,7 +1,14 @@
 \section{Troubleshooting}
-Below are summarized the most frequent problems encounter on the GRANDproto35 setup, and how they may be solved.
-
+Below are summarized the most frequent problems encounter on the GRANDproto35 setup, and how they may be solved.  \\
+\\  \
+{\bf TO BE UPDATED}  \\
+\\ \
 \begin{enumerate}[$\bullet$]
 {\item {\bf no ping:} check network settings on the PC (should be local network, with IP: 192.168.1.1). Check cable and fiber connection. Cycle power on the Front-End unit (may need to be done several times). If this does not work, go on field, and connect directly to unit from local fiber. If this works, then the problem comes from the fiber. If this does not work, then open the casing lid and check the Marvell leds (see section \ref{control}): first two should be blinking, two following should be on. If not, check that jumper is set on the right slot and that SFP is properly set in its slot. If nothing works, switch jumper to left slot (with power off) and test connection on field with Ethernet cable. If this works, then problems comes from the SFP module. If this does not work then the communication module has a problem and the unit should be brought back to lab for further test.}
+
 {\item {\bf no DAQ communication (ie no response to \texttt{slcreq.sh}):} Ping Front-End unit. Issue the command \texttt{echo \$DATADIR} in a terminal window of the DAQ PC, and check that the variable is indeed set to the folder where you want data to be written. Check that IP and MAC adress of the PC actually correspond to those given in \texttt{setAdress.sh}. Relaunch \texttt{setIP.sh}. Launch the \texttt{Wireshark} program. When a \texttt{SLCreq.sh} command is issued, a response from the Front-End Unit should appear in the packet traffic, with appropriate IP and MAC adresses from both sides.}
+
+{\item {\bf Antenna signal baseline with value below 0\,V:}}
+
+{\item {\bf Antenna signal baseline with value above 0.7:}}
 \end{enumerate}
